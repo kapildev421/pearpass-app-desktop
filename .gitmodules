@@ -50,9 +50,9 @@
 	path = packages/pearpass-lib-vault
 	url = ../pearpass-lib-vault.git
 	branch = main
-[submodule "packages/pearpass-lib-vault-mobile"]
-	path = packages/pearpass-lib-vault-mobile
-	url = ../pearpass-lib-vault-mobile.git
+[submodule "packages/pearpass-lib-vault-core"]
+	path = packages/pearpass-lib-vault-core
+	url = ../pearpass-lib-vault-core.git
 	branch = main
 [submodule "packages/pearpass-utils-password-check"]
 	path = packages/pearpass-utils-password-check
