@@ -94,6 +94,21 @@ jobs:
         run: |
           bare-make generate --platform linux --arch ${{ matrix.arch }}
           bare-make build
+      
+      - name: Find & rename AppImage file
+        id: find_file
+        run: |
+          set -euo pipefail
+          APPIMAGE_PATH=$(find "$GITHUB_WORKSPACE" -name "*.AppImage" -type f | head -n 1)
+          echo "Original AppImage: $APPIMAGE_PATH"
+
+          NEW_NAME="PearPass-Desktop-Linux-${{ matrix.arch }}-v${{ needs.version.outputs.version }}.AppImage"
+          NEW_PATH="$GITHUB_WORKSPACE/$NEW_NAME"
+
+          mv "$APPIMAGE_PATH" "$NEW_PATH"
+          echo "Renamed AppImage to: $NEW_PATH"
+
+          echo "APPIMAGE_PATH=$NEW_PATH" >> "$GITHUB_OUTPUT"
 
       - name: Find AppImage file
         id: find_file
@@ -201,38 +216,47 @@ jobs:
       - name: Find App file
         id: find_file
         run: |
-          # find the .app bundle (it's a directory)
-          APPIMAGE_PATH=$(find "$GITHUB_WORKSPACE" -name "*.app" -type d | head -n 1)
-          echo "APPIMAGE_PATH=$APPIMAGE_PATH" >> $GITHUB_OUTPUT
-          echo "Found app at: $APPIMAGE_PATH"
+          set -euo pipefail
+          APP_PATH=$(find "$GITHUB_WORKSPACE" -name "*.app" -type d | head -n 1)
+          echo "Found app at: $APP_PATH"
+          echo "APP_PATH=$APP_PATH" >> "$GITHUB_OUTPUT"
 
           TIMESTAMP=$(date +%Y%m%d-%H%M%S)
           echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_OUTPUT
 
-      - name: Create DMG and notarize
+      - name: Create DMG
         id: create_dmg
-        if: ${{ steps.find_file.outputs.APPIMAGE_PATH != '' }}
+        if: ${{ steps.find_file.outputs.APP_PATH != '' }}
         run: |
+          set -euo pipefail
           npm install --global create-dmg
-          create-dmg "${{ steps.find_file.outputs.APPIMAGE_PATH }}" --identity=959D2C8BB8323AEF9C2367ACA2F854AE4D7DE458 --no-version-in-filename
-          DMG=$(find "$GITHUB_WORKSPACE" -name "*.dmg" -type d | head -n 1)
-          echo "DMG=$DMG" >> $GITHUB_OUTPUT
-          echo "Found dmg at: $DMG"
-      
+
+          APP_PATH="${{ steps.find_file.outputs.APP_PATH }}"
+          DMG_NAME="PearPass-Desktop-MacOS-${{ matrix.arch }}-v${{ needs.version.outputs.version }}.dmg"
+
+          # create-dmg syntax: create-dmg [options] <dmg path> <source app>
+          create-dmg "$DMG_NAME" "$APP_PATH" --identity=959D2C8BB8323AEF9C2367ACA2F854AE4D7DE458 --no-version-in-filename
+
+          DMG_PATH="$PWD/$DMG_NAME"
+          echo "Created DMG at: $DMG_PATH"
+          echo "DMG_PATH=$DMG_PATH" >> "$GITHUB_OUTPUT"
+
       - name: Notarize DMG
+        if: ${{ steps.create_dmg.outputs.DMG_PATH != '' }}
         run: |
-          xcrun notarytool submit "Pearpass.dmg" --keychain-profile "pearpass" --wait
+          xcrun notarytool submit "${{ steps.create_dmg.outputs.DMG_PATH }}" --keychain-profile "pearpass" --wait
 
       - name: Staple DMG
+        if: ${{ steps.create_dmg.outputs.DMG_PATH != '' }}
         run: |
-          xcrun stapler staple "Pearpass.dmg"
-          xcrun stapler validate "Pearpass.dmg"
+          xcrun stapler staple "${{ steps.create_dmg.outputs.DMG_PATH }}"
+          xcrun stapler validate "${{ steps.create_dmg.outputs.DMG_PATH }}"
 
       - uses: actions/upload-artifact@v4
-        if: ${{ steps.find_file.outputs.APPIMAGE_PATH != '' }}
+        if: ${{ steps.create_dmg.outputs.DMG_PATH != '' }}
         with:
           name: PearPass-Desktop-MacOS-${{ matrix.arch }}-v${{ needs.version.outputs.version }}.dmg
-          path: "${{ github.workspace }}/appling/Pearpass.dmg"
+          path: ${{ steps.create_dmg.outputs.DMG_PATH }}
 
       - name: Clean up keychain and provisioning profile
         if: ${{ always() }}
