@@ -110,13 +110,6 @@ jobs:
 
           echo "APPIMAGE_PATH=$NEW_PATH" >> "$GITHUB_OUTPUT"
 
-      - name: Find AppImage file
-        id: find_file
-        run: |
-          APPIMAGE_PATH=$(find $GITHUB_WORKSPACE -name "*.AppImage" -type f | head -n 1)
-          echo "APPIMAGE_PATH=$APPIMAGE_PATH" >> $GITHUB_OUTPUT
-          echo "Found AppImage at: $APPIMAGE_PATH"
-
           TIMESTAMP=$(date +%Y%m%d-%H%M%S)
           echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_OUTPUT
 
