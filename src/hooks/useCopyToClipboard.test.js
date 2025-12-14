@@ -2,6 +2,13 @@ import { renderHook, act, waitFor } from '@testing-library/react'
 
 import { useCopyToClipboard } from './useCopyToClipboard'
 import { LOCAL_STORAGE_KEYS } from '../constants/localStorage'
+import { logger } from '../utils/logger'
+
+jest.mock('../utils/logger', () => ({
+  logger: {
+    error: jest.fn()
+  }
+}))
 
 // Mock pear-run module
 const mockPipe = {
@@ -96,5 +103,53 @@ describe('useCopyToClipboard', () => {
     expect(returnValue).toBe(false)
 
     navigator.clipboard = originalClipboard
+  })
+
+  test('returns false and logs error when text is undefined', async () => {
+    const { result } = renderHook(() => useCopyToClipboard())
+
+    let returnValue
+    await act(async () => {
+      returnValue = result.current.copyToClipboard(undefined)
+    })
+
+    expect(returnValue).toBe(false)
+    expect(logger.error).toHaveBeenCalledWith(
+      'useCopyToClipboard',
+      'Text to copy is invalid or undefined'
+    )
+    expect(navigator.clipboard.writeText).not.toHaveBeenCalled()
+  })
+
+  test('returns false and logs error when text is null', async () => {
+    const { result } = renderHook(() => useCopyToClipboard())
+
+    let returnValue
+    await act(async () => {
+      returnValue = result.current.copyToClipboard(null)
+    })
+
+    expect(returnValue).toBe(false)
+    expect(logger.error).toHaveBeenCalledWith(
+      'useCopyToClipboard',
+      'Text to copy is invalid or undefined'
+    )
+    expect(navigator.clipboard.writeText).not.toHaveBeenCalled()
+  })
+
+  test('returns false and logs error when text is not a string', async () => {
+    const { result } = renderHook(() => useCopyToClipboard())
+
+    let returnValue
+    await act(async () => {
+      returnValue = result.current.copyToClipboard(123)
+    })
+
+    expect(returnValue).toBe(false)
+    expect(logger.error).toHaveBeenCalledWith(
+      'useCopyToClipboard',
+      'Text to copy is invalid or undefined'
+    )
+    expect(navigator.clipboard.writeText).not.toHaveBeenCalled()
   })
 })

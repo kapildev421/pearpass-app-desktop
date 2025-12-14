@@ -42,6 +42,11 @@ export const useCopyToClipboard = ({ onCopy } = {}) => {
       return false
     }
 
+    if (!text || typeof text !== 'string') {
+      logger.error('useCopyToClipboard', 'Text to copy is invalid or undefined')
+      return false
+    }
+
     if (!navigator.clipboard) {
       logger.error('useCopyToClipboard', 'Clipboard API is not available')
       return false

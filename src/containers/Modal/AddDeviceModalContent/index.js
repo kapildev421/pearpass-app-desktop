@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 
-import { useLingui } from '@lingui/react'
 import { html } from 'htm/react'
 import { useCountDown } from 'pear-apps-lib-ui-react-hooks'
 import { generateQRCodeSVG } from 'pear-apps-utils-qr'
@@ -27,7 +26,9 @@ import {
 import { AlertBox } from '../../../components/AlertBox'
 import { FormModalHeaderWrapper } from '../../../components/FormModalHeaderWrapper'
 import { useModal } from '../../../context/ModalContext'
+import { useToast } from '../../../context/ToastContext'
 import { useCopyToClipboard } from '../../../hooks/useCopyToClipboard'
+import { useTranslation } from '../../../hooks/useTranslation'
 import {
   CopyIcon,
   TimeIcon,
@@ -37,7 +38,8 @@ import { ModalContent } from '../ModalContent'
 import { VaultPasswordFormModalContent } from '../VaultPasswordFormModalContent'
 
 export const AddDeviceModalContent = () => {
-  const { i18n } = useLingui()
+  const { t } = useTranslation()
+  const { setToast } = useToast()
   const { closeModal } = useModal()
   const [qrSvg, setQrSvg] = useState('')
   const [isProtected, setIsProtected] = useState(true)
@@ -94,14 +96,14 @@ export const AddDeviceModalContent = () => {
           <${HeaderTitle}>
             <${UserSecurityIcon} />
 
-            ${i18n._('Add a device')}
+            ${t('Add a device')}
           <//>
         <//>
       `}
     >
       <${Content}>
         <${QRCodeSection}>
-          <${QRCodeText}> ${i18n._('Scan this QR code')} <//>
+          <${QRCodeText}> ${t('Scan this QR code')} <//>
 
           <${QRCode}
             style=${{ width: '200px', height: '200px' }}
@@ -111,25 +113,37 @@ export const AddDeviceModalContent = () => {
 
         <${BackgroundSection}>
           <${ExpireText}>
-            ${i18n._('This link will expire in')}
+            ${t('This link will expire in')}
             <${ExpireTime}> ${expireTime} <//>
           <//>
 
           <${TimeIcon} color=${colors.primary400.mode1} />
         <//>
 
-        <${BackgroundSection} onClick=${() => copyToClipboard(data?.publicKey)}>
+        <${BackgroundSection}
+          onClick=${() => {
+            if (data?.publicKey) {
+              copyToClipboard(data.publicKey)
+            } else {
+              setToast({
+                message: t('Invite code not found')
+              })
+            }
+          }}
+        >
           <${QRCodeCopyWrapper}>
             <${QRCodeCopy}>
-              <${QRCodeText}> ${i18n._('Copy account link')} <//>
+              <${QRCodeText}> ${t('Copy account link')} <//>
               <${CopyIcon} color=${colors.primary400.mode1} />
             <//>
-            <${CopyText}> ${isCopied ? i18n._('Copied!') : data?.publicKey} <//>
+            <${CopyText}>
+              ${isCopied ? t('Copied!') : data?.publicKey || ''}
+            <//>
           <//>
         <//>
 
         <${AlertBox}
-          message=${i18n._(
+          message=${t(
             'Caution: You’re generating a secure invitation to sync another device with your vault. Treat this invite with the same confidentiality as your password.'
           )}
         />
