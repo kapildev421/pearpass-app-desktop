@@ -15,7 +15,7 @@ on:
 jobs:
   version:
     runs-on: ubuntu-22.04
-    if: github.repository_owner == 'tetherto'
+    # if: github.repository_owner == 'tetherto'
     outputs:
       version: ${{ steps.meta.outputs.VERSION }}
     strategy:
@@ -96,7 +96,7 @@ jobs:
 
       - name: Build Linux AppImage
         run: |
-          bare-build --target=linux-${{ matrix.arch }} --package --icon lib/icons/linux/icon.png ${{ env.APP_FILE }}
+          bare-build --host=linux-${{ matrix.arch }} --package --icon lib/icons/linux/icon.png ${{ env.APP_FILE }}
       
       - name: Find & rename AppImage file
         id: find_file
